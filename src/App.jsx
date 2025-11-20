@@ -3,6 +3,7 @@ import { Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import LinkPage from "./pages/LinkPage";
 import Panel from "./pages/Panel";
+import Logo from "./assets/whispme-logo.png";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         color: "#fff",
       }}
     >
+      {/* NAVBAR */}
       <header
         style={{
           padding: "10px 16px",
@@ -28,6 +30,7 @@ function App() {
           background: "rgba(5,8,22,0.85)",
         }}
       >
+        {/* LOGO (WhispMe yazısı kaldırıldı!) */}
         <Link
           to="/"
           style={{
@@ -36,19 +39,19 @@ function App() {
             fontWeight: 700,
             display: "flex",
             alignItems: "center",
-            gap: 6,
+            gap: 10,
           }}
         >
-          <span
+          <img
+            src={Logo}
+            alt="WhispMe logo"
             style={{
-              width: 20,
-              height: 20,
-              borderRadius: "999px",
-              background:
-                "conic-gradient(from 160deg, #4f46e5, #ec4899, #22d3ee, #4f46e5)",
+              height: 30,
+              userSelect: "none",
+              filter: "drop-shadow(0 0 6px #00eaff)",
+              borderRadius: 6,
             }}
           />
-          <span style={{ fontSize: 18 }}>WhispMe</span>
         </Link>
 
         <nav style={{ display: "flex", gap: 12, fontSize: 13 }}>
@@ -67,6 +70,7 @@ function App() {
         </nav>
       </header>
 
+      {/* SAYFA İÇERİĞİ */}
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "20px 16px" }}>
         <Routes>
           <Route path="/" element={<Home />} />
