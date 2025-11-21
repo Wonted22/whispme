@@ -5,6 +5,11 @@ import LinkPage from "./pages/LinkPage";
 import Panel from "./pages/Panel";
 import Logo from "./assets/whispme-logo.png";
 
+// Games
+import WheelHome from "./pages/games/wheel/WheelHome";
+import WheelCreate from "./pages/games/wheel/WheelCreate";
+import WheelRoom from "./pages/games/wheel/WheelRoom";
+
 function App() {
   return (
     <div
@@ -30,7 +35,7 @@ function App() {
           background: "rgba(5,8,22,0.85)",
         }}
       >
-        {/* LOGO (WhispMe yazısı kaldırıldı!) */}
+        {/* LOGO */}
         <Link
           to="/"
           style={{
@@ -54,6 +59,7 @@ function App() {
           />
         </Link>
 
+        {/* NAV */}
         <nav style={{ display: "flex", gap: 12, fontSize: 13 }}>
           <Link
             to="/"
@@ -61,21 +67,34 @@ function App() {
           >
             Ana Sayfa
           </Link>
+
           <Link
             to="/panel"
             style={{ textDecoration: "none", color: "white", opacity: 0.8 }}
           >
             Whisp Kutum
           </Link>
+
+          <Link
+            to="/games"
+            style={{ textDecoration: "none", color: "white", opacity: 0.9 }}
+          >
+            🎮 Oyunlar
+          </Link>
         </nav>
       </header>
 
-      {/* SAYFA İÇERİĞİ */}
+      {/* PAGE CONTENT */}
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "20px 16px" }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/m/:handle" element={<LinkPage />} />
           <Route path="/panel" element={<Panel />} />
+
+          {/* GAMES */}
+          <Route path="/games" element={<WheelHome />} />
+          <Route path="/games/wheel/create" element={<WheelCreate />} />
+          <Route path="/games/wheel/room/:roomId" element={<WheelRoom />} />
         </Routes>
       </main>
     </div>

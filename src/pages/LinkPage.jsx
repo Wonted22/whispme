@@ -12,6 +12,23 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
+// tarayıcıya anonim id kaydet
+function getOrCreateAnonId() {
+  if (typeof window === "undefined") return null;
+  const key = "whispme_anon_id";
+  const existing = localStorage.getItem(key);
+  if (existing) return existing;
+
+  const id =
+    "anon_" +
+    Date.now().toString(36) +
+    "_" +
+    Math.random().toString(36).slice(2, 8);
+
+  localStorage.setItem(key, id);
+  return id;
+}
+
 function LinkPage() {
   const { handle } = useParams();
   const [status, setStatus] = useState("");
@@ -41,10 +58,14 @@ function LinkPage() {
     try {
       setLoading(true);
 
+      const anonId = getOrCreateAnonId();
+
       await addDoc(collection(db, "messages"), {
         linkId: handle,
         text: text.trim(),
         createdAt: serverTimestamp(),
+        type: "normal",
+        senderAnonId: anonId ?? null, // ⭐ whisp atan kişi için anonim id
       });
 
       await updateDoc(doc(db, "links", handle), {
@@ -54,6 +75,7 @@ function LinkPage() {
       setText("");
       setStatus("Whisp gönderildi 🎉");
     } catch (err) {
+      console.error(err);
       setStatus("Gönderilirken hata oluştu.");
     } finally {
       setLoading(false);
@@ -141,7 +163,6 @@ function LinkPage() {
         </div>
       )}
 
-      {/* Alt sabit gönder butonu */}
       <div
         style={{
           position: "fixed",
@@ -159,8 +180,7 @@ function LinkPage() {
           style={{
             width: "100%",
             padding: "14px",
-            background:
-              "linear-gradient(135deg, #6a5af9, #d66efd)",
+            background: "linear-gradient(135deg, #6a5af9, #d66efd)",
             color: "white",
             border: "none",
             borderRadius: 14,
