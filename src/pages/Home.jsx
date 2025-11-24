@@ -81,12 +81,12 @@ function Home() {
       }}
     >
 
-      {/* 🔥 ÜST LOGO (WhispMe yazısı KALDIRILDI) */}
+      {/* 🔥 ÜST LOGO */}
       <div
         style={{
           width: "100%",
           textAlign: "center",
-          marginBottom: 35,
+          marginBottom: 20,
           marginTop: 5,
         }}
       >
@@ -100,6 +100,25 @@ function Home() {
           }}
         />
       </div>
+
+      {/* ⭐ PREMIUM DÜYMƏSİ */}
+      <button
+        onClick={() => navigate("/premium")}
+        style={{
+          margin: "0 auto 35px auto",
+          padding: "10px 18px",
+          borderRadius: 14,
+          border: "none",
+          background: "linear-gradient(135deg, #ffd776, #ffb347)",
+          color: "#000",
+          fontSize: 15,
+          fontWeight: 700,
+          cursor: "pointer",
+          boxShadow: "0 0 12px rgba(255,215,118,0.55)",
+        }}
+      >
+        ⭐ WhispMe Premium
+      </button>
 
       {/* AÇIKLAMA */}
       <div

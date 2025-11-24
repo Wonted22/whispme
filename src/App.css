@@ -1,42 +1,155 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+/*
+ * ====================================
+ * App.css: Ana Stil Dosyası
+ * ====================================
+ */
+
+/* 1. Global Reset ve Temel Ayarlar */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f4f7f6; /* Hafif gri arka plan */
+  color: #333; /* Varsayılan metin rengi */
+}
+
+/* 2. Uygulama Ana Konteyneri */
+.App {
   text-align: center;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto; /* Ortalamak için */
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* 3. Başlık Stilleri */
+header {
+  background-color: #282c34;
+  padding: 15px 0;
+  color: white;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: 20px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+header h1 {
+  margin: 0;
+  font-size: 2em;
+}
+
+/* 4. Genel Buton Stilleri */
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+/* 5. İçerik Alanı (Main Content) */
+.content-section {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ------------------------------------- */
+/* GEREKLİ TOAST KONUMLANDIRMA VE STİLLERİ (YUKARIDAN KAYAN) */
+.answer-toast-wrapper {
+  position: fixed;
+  top: 50px; /* Üst kısımdan aşağıda durması için */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  pointer-events: none;
+  /* Animasyonlar */
+  animation: slideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards,
+             fadeOut 0.4s ease-out 2.2s forwards; /* 2.2s sonra kaybolma başlar */
+}
+
+.answer-toast {
+  padding: 12px 20px;
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  position: relative;
+  overflow: hidden;
+  max-width: 300px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toast-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Renk Stilleri */
+.toast-positive { background: linear-gradient(135deg, #10b981, #059669); }
+.toast-negative { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+.toast-neutral { background: linear-gradient(135deg, #374151, #1f2937); }
+
+/* PARÇACIK VE ANİMASYON KODLARI */
+
+.toast-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.particle {
+  position: absolute;
+  left: 50%;
+  bottom: 15px;
+  transform: translateX(-50%);
+  animation: particleBurst 1.4s ease-out forwards;
+}
+
+/* particleBurst animasyonu */
+@keyframes particleBurst {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) rotate(0deg);
   }
-  to {
-    transform: rotate(360deg);
+  100% {
+    opacity: 0;
+    /* JavaScript'ten gelen --random-x değişkeni ile rastgele yatay hareket sağlanır */
+    transform: translateX(calc(-50% + var(--random-x))) translateY(-140px) rotate(360deg);
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+/* GÜNCELLENMİŞ slideIn animasyonu: YUKARIDAN aşağı kayar */
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-40px) scale(0.7); /* Başlangıçta üstten gizli */
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(8px) scale(1.06); /* Biraz esneme */
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1); /* Son konum */
   }
 }
 
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
+/* Kaybolma animasyonu */
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
 }

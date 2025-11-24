@@ -1,0 +1,96 @@
+.premium-page {
+  text-align: center;
+  padding: 20px;
+  min-height: 100vh;
+  background: #050816;
+  color: white;
+}
+
+.premium-title {
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(90deg, #e4a7ff, #a855f7, #7c3aed);
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-bottom: 10px;
+}
+
+.premium-subtitle {
+  opacity: 0.9;
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+
+.premium-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.premium-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 20px;
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  transition: 0.3s;
+}
+
+.premium-card:hover {
+  transform: scale(1.03);
+  border-color: #a855f7;
+}
+
+.price {
+  font-size: 26px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.period {
+  opacity: 0.75;
+  margin-bottom: 15px;
+}
+
+.premium-btn {
+  display: block;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  padding: 12px;
+  border-radius: 12px;
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+
+.lifetime-btn {
+  background: linear-gradient(135deg, #ffd776, #ffb347);
+  color: black;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(255, 215, 118, 0.6);
+}
+
+.features {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+  margin-top: 10px;
+  font-size: 15px;
+  opacity: 0.95;
+}
+
+.features li {
+  margin-bottom: 6px;
+}
+
+@media (min-width: 768px) {
+  .premium-cards {
+    flex-direction: row;
+    justify-content: center;
+  }
+}

@@ -5,10 +5,14 @@ import LinkPage from "./pages/LinkPage";
 import Panel from "./pages/Panel";
 import Logo from "./assets/whispme-logo.png";
 
-// Games
+// GAMES
+import Games from "./pages/Games";
 import WheelHome from "./pages/games/wheel/WheelHome";
 import WheelCreate from "./pages/games/wheel/WheelCreate";
 import WheelRoom from "./pages/games/wheel/WheelRoom";
+
+// ⭐ PREMIUM PAGE
+import PremiumPage from "./pages/PremiumPage";
 
 function App() {
   return (
@@ -20,10 +24,10 @@ function App() {
         color: "#fff",
       }}
     >
-      {/* NAVBAR */}
+      {/* ⭐ NAVBAR */}
       <header
         style={{
-          padding: "10px 16px",
+          padding: "10px 14px",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
           display: "flex",
           justifyContent: "space-between",
@@ -41,7 +45,6 @@ function App() {
           style={{
             textDecoration: "none",
             color: "white",
-            fontWeight: 700,
             display: "flex",
             alignItems: "center",
             gap: 10,
@@ -49,37 +52,60 @@ function App() {
         >
           <img
             src={Logo}
-            alt="WhispMe logo"
+            alt="WhispMe"
             style={{
               height: 30,
+              filter: "drop-shadow(0 0 4px #00eaff)",
               userSelect: "none",
-              filter: "drop-shadow(0 0 6px #00eaff)",
-              borderRadius: 6,
             }}
           />
+          <span style={{ fontSize: 16, fontWeight: 700 }}>WhispMe</span>
         </Link>
 
-        {/* NAV */}
-        <nav style={{ display: "flex", gap: 12, fontSize: 13 }}>
+        {/* NAV LINKS */}
+        <nav
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            fontSize: 14,
+          }}
+        >
           <Link
             to="/"
-            style={{ textDecoration: "none", color: "white", opacity: 0.8 }}
+            style={{ color: "white", opacity: 0.8, textDecoration: "none" }}
           >
-            Ana Sayfa
+            Home
           </Link>
 
           <Link
             to="/panel"
-            style={{ textDecoration: "none", color: "white", opacity: 0.8 }}
+            style={{ color: "white", opacity: 0.8, textDecoration: "none" }}
           >
             Whisp Kutum
           </Link>
 
           <Link
             to="/games"
-            style={{ textDecoration: "none", color: "white", opacity: 0.9 }}
+            style={{ color: "white", opacity: 0.9, textDecoration: "none" }}
           >
             🎮 Oyunlar
+          </Link>
+
+          {/* ⭐ PREMIUM BUTTON */}
+          <Link
+            to="/premium"
+            style={{
+              padding: "6px 12px",
+              borderRadius: 8,
+              background: "linear-gradient(135deg,#ffd776,#ffb347)",
+              color: "#000",
+              fontWeight: 700,
+              textDecoration: "none",
+              boxShadow: "0 0 8px rgba(255,215,118,0.55)",
+            }}
+          >
+            ⭐ Premium
           </Link>
         </nav>
       </header>
@@ -92,9 +118,12 @@ function App() {
           <Route path="/panel" element={<Panel />} />
 
           {/* GAMES */}
-          <Route path="/games" element={<WheelHome />} />
+          <Route path="/games" element={<Games />} />
           <Route path="/games/wheel/create" element={<WheelCreate />} />
           <Route path="/games/wheel/room/:roomId" element={<WheelRoom />} />
+
+          {/* ⭐ PREMIUM PAGE */}
+          <Route path="/premium" element={<PremiumPage />} />
         </Routes>
       </main>
     </div>
