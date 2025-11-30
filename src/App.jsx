@@ -1,4 +1,5 @@
 // src/App.jsx
+
 import { Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import LinkPage from "./pages/LinkPage";
@@ -7,24 +8,25 @@ import Logo from "./assets/whispme-logo.png";
 
 // GAMES
 import Games from "./pages/Games";
-import WheelHome from "./pages/games/wheel/WheelHome";
-import WheelCreate from "./pages/games/wheel/WheelCreate";
-import WheelRoom from "./pages/games/wheel/WheelRoom";
+import LoveMeterHome from "./pages/games/love-meter/LoveMeterHome";
+import LoveMeterSelf from "./pages/games/love-meter/LoveMeterSelf";
+import LoveMeterRoom from "./pages/games/love-meter/LoveMeterRoom";
 
-// ⭐ PREMIUM PAGE
-import PremiumPage from "./pages/PremiumPage";
+// PREMIUM
+import PremiumPage from "./pages/PremiumPage"; 
+// PremiumCheckoutPage artıq yoxdur – tam silindi
 
 function App() {
   return (
     <div
       style={{
         minHeight: "100vh",
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+        fontFamily: "system-ui, sans-serif",
         background: "#050816",
         color: "#fff",
       }}
     >
-      {/* ⭐ NAVBAR */}
+      {/* NAVBAR */}
       <header
         style={{
           padding: "10px 14px",
@@ -55,7 +57,6 @@ function App() {
             alt="WhispMe"
             style={{
               height: 30,
-              filter: "drop-shadow(0 0 4px #00eaff)",
               userSelect: "none",
             }}
           />
@@ -71,28 +72,32 @@ function App() {
             fontSize: 14,
           }}
         >
-          <Link
-            to="/"
-            style={{ color: "white", opacity: 0.8, textDecoration: "none" }}
-          >
+          <Link to="/" style={{ color: "white", textDecoration: "none" }}>
             Home
           </Link>
 
           <Link
             to="/panel"
-            style={{ color: "white", opacity: 0.8, textDecoration: "none" }}
+            style={{
+              color: "white",
+              opacity: 0.8,
+              textDecoration: "none",
+            }}
           >
             Whisp Kutum
           </Link>
 
           <Link
             to="/games"
-            style={{ color: "white", opacity: 0.9, textDecoration: "none" }}
+            style={{
+              color: "white",
+              opacity: 0.9,
+              textDecoration: "none",
+            }}
           >
             🎮 Oyunlar
           </Link>
 
-          {/* ⭐ PREMIUM BUTTON */}
           <Link
             to="/premium"
             style={{
@@ -102,7 +107,6 @@ function App() {
               color: "#000",
               fontWeight: 700,
               textDecoration: "none",
-              boxShadow: "0 0 8px rgba(255,215,118,0.55)",
             }}
           >
             ⭐ Premium
@@ -110,7 +114,7 @@ function App() {
         </nav>
       </header>
 
-      {/* PAGE CONTENT */}
+      {/* ROUTES */}
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "20px 16px" }}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -119,10 +123,14 @@ function App() {
 
           {/* GAMES */}
           <Route path="/games" element={<Games />} />
-          <Route path="/games/wheel/create" element={<WheelCreate />} />
-          <Route path="/games/wheel/room/:roomId" element={<WheelRoom />} />
+          <Route path="/games/love-meter" element={<LoveMeterHome />} />
+          <Route path="/games/love-meter/self" element={<LoveMeterSelf />} />
+          <Route
+            path="/games/love-meter/room/:roomId"
+            element={<LoveMeterRoom />}
+          />
 
-          {/* ⭐ PREMIUM PAGE */}
+          {/* PREMIUM PAGE */}
           <Route path="/premium" element={<PremiumPage />} />
         </Routes>
       </main>

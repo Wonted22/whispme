@@ -308,7 +308,7 @@ export default function WheelRoom() {
     return list;
   }, [anonId]);
   
-  // Çarkın dönme açısını hesaplayan FONKSİYON - GÜNCELLENDİ
+  // Çarkın dönme açısını hesaplayan FONKSİYON - DÜZELTİLDİ
   const calculateWheelRotation = useCallback((room, targetAnonId) => {
     if (!targetAnonId) return finalRotationRef.current; 
 
@@ -319,21 +319,22 @@ export default function WheelRoom() {
     if (targetIndex === -1) return finalRotationRef.current; 
 
     const numPlayers = sortedPlayerList.length;
-    const segmentAngle = 360 / numPlayers; 
+    const segmentAngle = 360 / numPlayers;
     
-    // İbrenin sabit kalıp çarkın dönmesi için hesaplama
-    // Seçilen segmentin ibrenin altına gelmesi için gerekli açı
+    // İBRE SABİT - ÇARK DÖNECEK
+    // İbrenin pozisyonu (üst orta - 12 o'clock pozisyonu)
+    const pointerPosition = -90; // Üst orta (12 o'clock)
+    
+    // Hedef segmentin merkez açısı
     const targetSegmentCenterAngle = (targetIndex * segmentAngle) + (segmentAngle / 2);
     
-    // Çarkı döndürerek bu segmenti ibrenin altına getir
-    // 360 * 3 = 3 tam tur + hedef açı
-    const currentRot = finalRotationRef.current;
-    const normalizedCurrent = currentRot % 360;
+    // Çarkı döndürerek hedef segmenti ibrenin altına getir
+    // 3 tam tur + hedef segmentin ibrenin altına gelmesi için gerekli açı
+    const extraSpins = 360 * 5; // 5 tam tur ekstra dönüş
+    const rotationNeeded = extraSpins + (360 - targetSegmentCenterAngle + pointerPosition);
     
-    let newRotation = currentRot + (360 * 5) - normalizedCurrent + (360 - targetSegmentCenterAngle);
-    
-    finalRotationRef.current = newRotation;
-    return newRotation;
+    finalRotationRef.current = rotationNeeded;
+    return rotationNeeded;
   }, [getPlayerList]);
 
   // Odayı dinle
@@ -501,17 +502,57 @@ export default function WheelRoom() {
   }, [roomId]);
 
   // Oda sohbetini dinle
-  useEffect(() => {
-    const messagesRef = collection(db, "rooms", roomId, "messages");
-    const q = query(messagesRef, orderBy("createdAt", "asc"));
-    const unsub = onSnapshot(q, (snap) => {
-      const msgs = [];
-      snap.forEach((d) => msgs.push({ id: d.id, ...d.data() }));
-      setChatMessages(msgs);
-    });
-    return () => unsub();
-  }, [roomId]);
+ // Odayı dinle - CEVAPLAR İÇİN DÜZELTİLDİ
+useEffect(() => {
+  const ref = doc(db, "rooms", roomId);
+  const unsub = onSnapshot(
+    ref,
+    (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        console.log("Oda güncellendi, cevaplar:", data.answers); // Debug için
+        setRoom(data);
 
+        if (data.currentTask && data.currentTask !== localTask) {
+          setLocalTask(data.currentTask);
+          
+          setIsSpinning(true);
+          
+          const newRotation = calculateWheelRotation(data, data.selectedAnonId);
+          setWheelRotation(newRotation); 
+          
+          setTimeout(() => {
+            setIsSpinning(false);
+          }, 4000);
+          
+          setHasAnswered(false);
+          setAnswer("");
+
+          if (answerTimeoutRef.current) {
+              clearTimeout(answerTimeoutRef.current);
+              setAnswerToast(null);
+          }
+        }
+
+        // CEVAPLARI KONTROL ET - DÜZELTİLDİ
+        if (data.answers && data.answers.length > 0) {
+          const userAnswer = data.answers.find(answer => answer.anonId === anonId);
+          if (userAnswer && room.currentTask) {
+            setHasAnswered(true);
+          }
+        }
+      } else {
+        setRoom(null);
+      }
+      setLoading(false);
+    },
+    (err) => {
+      console.error("Oda dinlenirken hata:", err);
+      setLoading(false);
+    }
+  );
+  return () => unsub();
+}, [roomId, localTask, calculateWheelRotation, anonId]);
   // Whispleştiğin kişileri getiren fonksiyon
   const openInviteModal = async () => {
     if (!room?.hostAnonId) return;
@@ -616,32 +657,38 @@ export default function WheelRoom() {
   };
 
   // Cevap gönderme fonksiyonu
-  const sendAnswer = async () => {
-    if (!canAnswer) return; 
-    const text = answer.trim();
-    if (!text) return;
-    
-    setSendingAnswer(true);
-    const vibe = analyzeAnswerText(text);
-    
-    const newAnswer = {
-      anonId: anonId,
-      text: text,
-      task: room.currentTask,
-      vibe: vibe,
-      createdAt: Date.now(),
-      reactions: {},
-    };
+ // Cevap gönderme fonksiyonu - DÜZELTİLDİ
+const sendAnswer = async () => {
+  if (!canAnswer) return; 
+  const text = answer.trim();
+  if (!text) return;
+  
+  setSendingAnswer(true);
+  const vibe = analyzeAnswerText(text);
+  
+  const newAnswer = {
+    anonId: anonId,
+    text: text,
+    task: room.currentTask,
+    vibe: vibe,
+    createdAt: Date.now(),
+    reactions: {},
+  };
+
+  try {
+    // Mevcut cevapları al ve yeni cevabı ekle
+    const currentAnswers = room.answers || [];
+    const updatedAnswers = [...currentAnswers, newAnswer];
 
     await updateDoc(doc(db, "rooms", roomId), {
-        answers: arrayUnion(newAnswer),
+        answers: updatedAnswers, // arrayUnion yerine direkt array kullan
         currentTask: null,
         selectedAnonId: null,
         status: "waiting"
     });
 
     setHasAnswered(true);
-    setSendingAnswer(false);
+    setAnswer("");
     
     setAnswerToast({
       title: vibe === "Pozitif" ? "Gönülleri Fethettin!" : vibe === "Sert" ? "Cesur Bir İtiraftı!" : "Dürüstlükten Şaşmadın!",
@@ -652,7 +699,12 @@ export default function WheelRoom() {
     answerTimeoutRef.current = setTimeout(() => {
       setAnswerToast(null);
     }, 5000);
-  };
+  } catch (error) {
+    console.error("Cevap gönderilirken hata:", error);
+  } finally {
+    setSendingAnswer(false);
+  }
+};
 
   const addReaction = async (ansIndex, emoji) => {
       const newAnswers = [...answers];
@@ -747,7 +799,7 @@ export default function WheelRoom() {
     setChatSending(false);
   };
 
-  // Çark üzerindeki oyuncu etiketlerini gösteren fonksiyon - GÜNCELLENDİ
+  // Çark üzerindeki oyuncu etiketlerini gösteren fonksiyon - DÜZELTİLDİ
   const renderPlayerTagsAroundWheel = useCallback(() => {
     if (!room) return null;
     
@@ -757,11 +809,20 @@ export default function WheelRoom() {
     if (sortedPlayerList.length === 0) return null;
     
     const numPlayers = sortedPlayerList.length;
+    const currentRotation = isSpinning ? wheelRotation : finalRotationRef.current;
+    const adjustedRotation = currentRotation % 360;
 
     return sortedPlayerList.map((id, index) => {
-      const angle = (2 * Math.PI * index) / numPlayers - Math.PI / 2;
-      const x = center + radius * Math.cos(angle);
-      const y = center + radius * Math.sin(angle);
+      // Segment merkez açısı (çarkın orijinal pozisyonuna göre)
+      const segmentCenterAngle = (360 * index) / numPlayers;
+      
+      // Çarkın dönüşünü hesaba katarak gerçek pozisyon
+      const actualAngle = segmentCenterAngle - adjustedRotation;
+      const radian = (actualAngle * Math.PI) / 180;
+      
+      const x = center + radius * Math.cos(radian);
+      const y = center + radius * Math.sin(radian);
+      
       const isSelected = id === (room.selectedAnonId || null);
       
       return (
@@ -785,7 +846,7 @@ export default function WheelRoom() {
         </div>
       );
     });
-  }, [room, anonId, isMobile, center, radius, getPlayerList]);
+  }, [room, anonId, isMobile, center, radius, getPlayerList, isSpinning, wheelRotation]);
 
   if (loading) return (
     <div style={{ 

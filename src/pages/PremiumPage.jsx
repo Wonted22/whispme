@@ -1,79 +1,148 @@
-// src/pages/games/Games.jsx
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { db } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
 
+// ⭐ SƏNİN REAL PADDLE PRICE ID-LƏRİN
+const PADDLE_PRICE_IDS = {
+  monthly: "pri_01kb8yk1xc8mdqvvrvsem5vnf2",
+  yearly: "pri_01kb8ypz7b9p812z5g7p4rdzb1",
+};
 
-export default function Games() {
+// ⭐ SƏNİN REAL CLIENT TOKEN
+const CLIENT_TOKEN = "live_3db01d894db32c6104fd77e1480";
+
+export default function PremiumPage() {
+  const [loading, setLoading] = useState(false);
+  const [plan, setPlan] = useState("yearly");
+
+  const userId =
+    typeof window !== "undefined"
+      ? localStorage.getItem("loveMeterUserId") || `guest_${Date.now()}`
+      : null;
+
+  // ⭐ PADDLE INIT
+  useEffect(() => {
+    if (window.Paddle) {
+      window.Paddle.Initialize({
+        token: CLIENT_TOKEN,
+        environment: "live",
+      });
+      console.log("Paddle Initialized ✔");
+    } else {
+      console.error("Paddle not loaded ❌");
+    }
+  }, []);
+
+  // ⭐ CHECKOUT aç
+  const startCheckout = async () => {
+    if (!window.Paddle) {
+      alert("Paddle yüklenmədi!");
+      return;
+    }
+
+    const priceId = PADDLE_PRICE_IDS[plan];
+    setLoading(true);
+
+    window.Paddle.Checkout.open({
+      items: [{ priceId, quantity: 1 }],
+      customer: { id: userId },
+
+      successCallback: async () => {
+        await setDoc(
+          doc(db, "users", userId),
+          {
+            premium: true,
+            premiumType: plan,
+            premiumSince: Date.now(),
+          },
+          { merge: true }
+        );
+
+        window.location.href = "/panel";
+      },
+
+      closeCallback: () => setLoading(false),
+    });
+  };
+
   return (
-    <div style={{ minHeight: "100vh", color: "white" }}>
-      <h1 style={{ fontSize: 26, marginBottom: 12 }}>🎮 Oyunlar</h1>
-      <p style={{ opacity: 0.8, fontSize: 14, marginBottom: 18 }}>
-        Whisp atan kişilerle veya arkadaşlarınla oynayabileceğin mini oyunlar.
-        Odanı aç, linki paylaş, geri kalan kaosu çark halletsin. 😈
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#050816",
+        color: "white",
+        padding: "40px 16px",
+        textAlign: "center",
+      }}
+    >
+      <h1 style={{ fontSize: 32, fontWeight: 800, color: "#FCD34D" }}>
+        WhispMe Premium
+      </h1>
+
+      <p style={{ opacity: 0.7 }}>
+        Reklamsız təcrübə, gizli nəticələr, limitsiz oyunlar.
       </p>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 14,
-        }}
-      >
-        {/* Neon Çark Oyunu Kartı */}
-        <Link
-          to="./wheel/WheelHome"
+      {/* PLAN SEÇİMİ */}
+      <div style={{ marginTop: 30 }}>
+        <button
+          onClick={() => setPlan("monthly")}
           style={{
-            textDecoration: "none",
-            color: "inherit",
+            padding: "10px 16px",
+            marginRight: 10,
+            borderRadius: 8,
+            border: "none",
+            background:
+              plan === "monthly" ? "#4ade80" : "rgba(255,255,255,0.15)",
+            color: plan === "monthly" ? "black" : "white",
+            fontWeight: 700,
           }}
         >
-          <div
-            style={{
-              padding: 16,
-              borderRadius: 16,
-              background:
-                "linear-gradient(135deg, rgba(56,189,248,0.15), rgba(168,85,247,0.25))",
-              border: "1px solid rgba(129,140,248,0.6)",
-              boxShadow: "0 18px 45px rgba(0,0,0,0.65)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 24 }}>🎡</span>
-                <h2 style={{ margin: 0, fontSize: 18 }}>Neon Çark</h2>
-              </div>
-              <span
-                style={{
-                  fontSize: 11,
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  background: "rgba(15,23,42,0.9)",
-                  border: "1px solid rgba(148,163,184,0.6)",
-                }}
-              >
-                2–5 kişi
-              </span>
-            </div>
+          Aylıq – $2.99
+        </button>
 
-            <p style={{ fontSize: 13, opacity: 0.9, marginBottom: 10 }}>
-              Çark etrafında whisper profilleri dönüyor. Çark kime gelirse
-              o kişi <strong>HOST hakkında</strong> dürüstçe cevap vermek zorunda.
-              “Gerçek düşünceler” oyunu gibi düşün. 👀
-            </p>
-
-            <div style={{ fontSize: 12, opacity: 0.75 }}>
-              ➜ “Oda Oluştur” deyip linki story’ne / DM’e at, seni tanıyanlar
-              oyuna girsin. Çıkan cevaplar içerik olarak da manyak olur.
-            </div>
-          </div>
-        </Link>
+        <button
+          onClick={() => setPlan("yearly")}
+          style={{
+            padding: "10px 16px",
+            borderRadius: 8,
+            border: "none",
+            background:
+              plan === "yearly" ? "#4ade80" : "rgba(255,255,255,0.15)",
+            color: plan === "yearly" ? "black" : "white",
+            fontWeight: 700,
+          }}
+        >
+          İllik – $19.99
+        </button>
       </div>
+
+      {/* ÖDƏNİŞ DÜYMƏSİ */}
+      <button
+        onClick={startCheckout}
+        style={{
+          marginTop: 40,
+          padding: "16px 20px",
+          borderRadius: 10,
+          border: "none",
+          background: "linear-gradient(90deg,#F59E0B,#D97706)",
+          color: "black",
+          fontWeight: 800,
+          fontSize: 20,
+          width: "100%",
+          maxWidth: 350,
+          cursor: "pointer",
+        }}
+        disabled={loading}
+      >
+        {loading
+          ? "Yüklənir..."
+          : `Al – $${plan === "monthly" ? "2.99" : "19.99"}`}
+      </button>
+
+      <p style={{ marginTop: 20, opacity: 0.5, fontSize: 12 }}>
+        Ödənişlər Paddle tərəfindən idarə olunur.
+      </p>
     </div>
   );
 }
