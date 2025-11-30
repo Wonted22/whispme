@@ -6,11 +6,11 @@ import { doc, setDoc } from "firebase/firestore";
 
 // ⭐ PADDLE SECRETS (Token və ID'ler)
 const PADDLE_PRODUCT_IDS = {
-  monthly: "pri_01kb8yk1xc8mdqvvrvsem5vnf2",
+  monthly: "pri_01kb98xzeafsp2v65aexz1mz04",
   yearly:  "pri_01kb8ypz7b9p812z5g7p4rdzb1"
 };
 
-const CLIENT_TOKEN = "live_3db01d894db32c6104fd77e1480"; 
+const CLIENT_TOKEN = "test_19fc2fa89508ca80a4e4b1093d5"; 
 
 // ------------------- ELITE STYLES AND DESIGN -------------------
 const PRIMARY_COLOR = '#F59E0B'; // Gold/Amber
