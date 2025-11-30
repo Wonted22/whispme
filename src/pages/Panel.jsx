@@ -21,36 +21,42 @@ function Panel() {
   const [cardText, setCardText] = useState("");
   const [showCardModal, setShowCardModal] = useState(false);
 
+  // If you ever want to use it: read from localStorage
+  const isPremium =
+    typeof window !== "undefined" &&
+    localStorage.getItem("whispme_premium") === "true";
+
   // ---------------------------
-  //  PROFİL LINK & PAYLAŞIM
+  //  PROFILE LINK & SHARING
   // ---------------------------
 
-  const origin =
-    typeof window !== "undefined" ? window.location.origin : "";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
   const profileLink = handle ? `${origin}/m/${handle}` : "";
 
   const shareProfileLink = async () => {
     if (!profileLink) return;
-    const text = `Bana anonim Whisp göndermek için tıkla: ${profileLink}`;
+
+    const shareText = `Send me anonymous Whisps 👇\n${profileLink}`;
 
     try {
       if (navigator.share) {
         await navigator.share({
           title: "WhispMe",
-          text,
+          text: shareText,
           url: profileLink,
         });
       } else {
-        await navigator.clipboard.writeText(text);
-        alert("Paylaşım metni ve link panoya kopyalandı:\n\n" + text);
+        await navigator.clipboard.writeText(shareText);
+        alert("Copied to clipboard:\n\n" + shareText);
       }
     } catch (err) {
-      console.error("Profil paylaşım hatası:", err);
+      console.error("Profile share error:", err);
     }
   };
 
   // ---------------------------
-  //  KART PAYLAŞIMI (FOTO + LİNKLİ METİN)
+  //  NGL-STYLE CARD SHARE
+  //  (TikTok, Instagram, WhatsApp, Twitter, etc.)
   // ---------------------------
 
   const shareCard = async () => {
@@ -58,19 +64,17 @@ function Panel() {
     if (!el || !handle) return;
 
     const shareUrl = `${origin}/m/${handle}`;
-    const shareText = `Bana anonim Whisp göndermek için tıkla: ${shareUrl}`;
+    const shareText = `Send me anonymous Whisps 👇\n${shareUrl}`;
 
     try {
-      // Kartı canvas'a çevir
-      const canvas = await html2canvas(el);
+      // Convert card to PNG
+      const canvas = await html2canvas(el, { backgroundColor: null });
       const imgURL = canvas.toDataURL("image/png");
       const res = await fetch(imgURL);
       const blob = await res.blob();
-      const file = new File([blob], "whispme-card.png", {
-        type: "image/png",
-      });
+      const file = new File([blob], "whisp-card.png", { type: "image/png" });
 
-      // Dosya + metin + url destekleniyorsa tam deneyim
+      // Full share: image + text (iOS / Android native share)
       if (
         navigator.share &&
         navigator.canShare &&
@@ -78,14 +82,13 @@ function Panel() {
       ) {
         await navigator.share({
           title: "WhispMe",
-          text: shareText, // açıklama metninde link
-          url: shareUrl, // ayrıca url alanında da link
-          files: [file], // görsel kart
+          text: shareText, // text with clickable link where supported
+          files: [file],
         });
         return;
       }
 
-      // Sadece metin + url paylaşımı destekleniyorsa
+      // Text + URL only (no file support, e.g. some browsers)
       if (navigator.share) {
         await navigator.share({
           title: "WhispMe",
@@ -95,37 +98,33 @@ function Panel() {
         return;
       }
 
-      // Son çare: linkli metni panoya kopyala
+      // Fallback: copy text to clipboard
       await navigator.clipboard.writeText(shareText);
-      alert(
-        "Tarayıcın dosya paylaşımını desteklemiyor. Metin ve link panoya kopyalandı:\n\n" +
-          shareText
-      );
+      alert("Copied to clipboard:\n\n" + shareText);
     } catch (err) {
-      console.error("Kart paylaşım hatası:", err);
-      alert("Paylaşım sırasında bir hata oluştu.");
+      console.error("Card share error:", err);
+      alert("Something went wrong while sharing.");
     }
   };
 
   // ---------------------------
-  //  MESAJ SİLME
+  //  DELETE MESSAGE
   // ---------------------------
 
   const handleDelete = async (id) => {
-    const ok = window.confirm("Bu Whisp'i silmek istediğine emin misin?");
+    const ok = window.confirm("Are you sure you want to delete this Whisp?");
     if (!ok) return;
 
     try {
       await deleteDoc(doc(db, "messages", id));
-      // onSnapshot otomatik olarak listeyi güncelliyor
     } catch (err) {
-      console.error("Silme hatası:", err);
-      alert("Whisp silinirken bir hata oluştu.");
+      console.error("Delete error:", err);
+      alert("An error occurred while deleting this Whisp.");
     }
   };
 
   // ---------------------------
-  //  REALTIME MESAJ AKIŞI
+  //  REALTIME MESSAGE STREAM
   // ---------------------------
 
   useEffect(() => {
@@ -154,7 +153,7 @@ function Panel() {
         setLoading(false);
       },
       (error) => {
-        console.error("Mesajları dinlerken hata:", error);
+        console.error("Realtime messages error:", error);
         setLoading(false);
       }
     );
@@ -163,7 +162,7 @@ function Panel() {
   }, []);
 
   // ---------------------------
-  //  ANALYTICS HESAPLAMA
+  //  SIMPLE ANALYTICS
   // ---------------------------
 
   const totalWhisps = messages.length;
@@ -197,7 +196,7 @@ function Panel() {
   }
 
   // ---------------------------
-  //  HANDLE YOKSA
+  //  NO HANDLE CASE
   // ---------------------------
 
   if (!handle) {
@@ -211,22 +210,22 @@ function Panel() {
           color: "white",
         }}
       >
-        <h2 style={{ marginBottom: 8 }}>Whisp Kutun</h2>
-        <p style={{ opacity: 0.8, marginBottom: 16 }}>
-          Önce bir WhispMe linki oluşturman gerekiyor.
+        <h2 style={{ marginBottom: 8 }}>Your Whisp Inbox</h2>
+        <p style={{ opacity: 0.8, marginBottom: 16, fontSize: 14 }}>
+          You need to create your WhispMe link first.
         </p>
         <Link
           to="/"
           style={{ color: "#60a5fa", textDecoration: "none", fontWeight: 500 }}
         >
-          Ana sayfaya dön
+          Go back to Home
         </Link>
       </div>
     );
   }
 
   // ---------------------------
-  //  RENDER
+  //  MAIN RENDER
   // ---------------------------
 
   return (
@@ -241,7 +240,7 @@ function Panel() {
           "system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif",
       }}
     >
-      {/* ÜST BAŞLIK */}
+      {/* HEADER CARD */}
       <div
         style={{
           marginBottom: 14,
@@ -254,10 +253,28 @@ function Panel() {
         }}
       >
         <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>
-          Whisp Kutun
+          Your Whisp Inbox
         </div>
         <h2 style={{ margin: 0, fontSize: 22 }}>
-          @{handle} – Gelen Whisp'ler
+          @{handle}
+          {isPremium && (
+            <span
+              style={{
+                marginLeft: 8,
+                fontSize: 11,
+                padding: "3px 8px",
+                borderRadius: 999,
+                background: "rgba(250,204,21,0.18)",
+                border: "1px solid rgba(250,204,21,0.9)",
+                color: "#facc15",
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+              }}
+            >
+              Premium
+            </span>
+          )}{" "}
+          – Incoming Whisps
         </h2>
         <div
           style={{
@@ -267,12 +284,12 @@ function Panel() {
             lineHeight: 1.4,
           }}
         >
-          WhispMe linkini story’de, DM’de veya biyonda paylaş. Yeni Whisp’ler
-          anlık olarak burada görünecek.
+          Share your WhispMe link in your story, bio, or DMs. New Whisps will
+          appear here in real time.
         </div>
       </div>
 
-      {/* PROFİL LINKİ VİRAL BAR */}
+      {/* PROFILE LINK / VIRAL BAR */}
       <div
         style={{
           marginBottom: 16,
@@ -285,7 +302,7 @@ function Panel() {
         }}
       >
         <div style={{ marginBottom: 4, opacity: 0.8 }}>
-          WhispMe linkin (bio / DM / tweet için):
+          Your WhispMe link (for bio / DMs / tweets):
         </div>
         <div
           style={{
@@ -299,7 +316,11 @@ function Panel() {
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
-            onClick={() => navigator.clipboard.writeText(profileLink)}
+            onClick={() =>
+              navigator.clipboard.writeText(
+                `Send me anonymous Whisps 👇\n${profileLink}`
+              )
+            }
             style={{
               flex: 1,
               padding: "8px 10px",
@@ -312,7 +333,7 @@ function Panel() {
               cursor: "pointer",
             }}
           >
-            Linki Kopyala
+            Copy text + link
           </button>
           <button
             onClick={shareProfileLink}
@@ -328,7 +349,7 @@ function Panel() {
               cursor: "pointer",
             }}
           >
-            Paylaş (DM / tweet)
+            Share (DM / tweet)
           </button>
         </div>
       </div>
@@ -352,7 +373,7 @@ function Panel() {
             border: "1px solid rgba(148,163,184,0.45)",
           }}
         >
-          <div style={{ fontSize: 11, opacity: 0.7 }}>Toplam Whisp</div>
+          <div style={{ fontSize: 11, opacity: 0.7 }}>Total Whisps</div>
           <div style={{ fontSize: 18, fontWeight: 600 }}>{totalWhisps}</div>
         </div>
 
@@ -366,7 +387,7 @@ function Panel() {
             border: "1px solid rgba(52,211,153,0.5)",
           }}
         >
-          <div style={{ fontSize: 11, opacity: 0.7 }}>Bugünkü Whisp</div>
+          <div style={{ fontSize: 11, opacity: 0.7 }}>Whisps today</div>
           <div style={{ fontSize: 18, fontWeight: 600 }}>{todayWhisps}</div>
         </div>
 
@@ -381,22 +402,25 @@ function Panel() {
               fontSize: 12,
             }}
           >
-            <strong>Son Whisp:</strong> {lastWhispTime}
+            <strong>Last Whisp:</strong> {lastWhispTime}
           </div>
         )}
       </div>
 
-      {/* YÜKLENİYOR */}
-      {loading && <p>Yükleniyor...</p>}
+      {/* LOADING */}
+      {loading && (
+        <p style={{ fontSize: 13, opacity: 0.8 }}>Loading your Whisps...</p>
+      )}
 
-      {/* HENÜZ MESAJ YOK */}
+      {/* EMPTY STATE */}
       {!loading && messages.length === 0 && (
         <p style={{ opacity: 0.75, fontSize: 13 }}>
-          Henüz Whisp yok. Linkini story / DM'de paylaşmayı dene.
+          You don’t have any Whisps yet. Share your link to start receiving
+          anonymous messages.
         </p>
       )}
 
-      {/* MESAJ LİSTESİ */}
+      {/* MESSAGE LIST */}
       <div
         style={{
           marginTop: 4,
@@ -459,7 +483,7 @@ function Panel() {
                   fontWeight: 500,
                 }}
               >
-                Whisp Kartı
+                Create Whisp Card
               </button>
 
               <button
@@ -475,14 +499,14 @@ function Panel() {
                   fontWeight: 500,
                 }}
               >
-                Sil
+                Delete
               </button>
             </div>
           </div>
         ))}
       </div>
 
-      {/* FLOATING ACTION BUTTON – PROFİL LINK PAYLAŞ */}
+      {/* FLOATING SHARE BUTTON */}
       <button
         onClick={shareProfileLink}
         style={{
@@ -505,12 +529,12 @@ function Panel() {
           cursor: "pointer",
           zIndex: 20,
         }}
-        aria-label="WhispMe linkini paylaş"
+        aria-label="Share your WhispMe link"
       >
         ↻
       </button>
 
-      {/* KART MODALI */}
+      {/* CARD MODAL */}
       {showCardModal && (
         <div
           style={{
@@ -536,14 +560,15 @@ function Panel() {
               boxShadow: "0 24px 70px rgba(0,0,0,0.9)",
             }}
           >
-            <h3 style={{ marginBottom: 12, fontSize: 18 }}>Whisp Kartı</h3>
+            <h3 style={{ marginBottom: 12, fontSize: 18 }}>Whisp Card</h3>
 
-            {/* Kartın kendisi */}
+            {/* CARD PREVIEW (NGL STYLE) */}
             <div
               id="previewCard"
               style={{
-                width: 300,
-                height: 500,
+                width: "100%",
+                maxWidth: 320,
+                minHeight: 420,
                 margin: "0 auto 18px auto",
                 borderRadius: 24,
                 padding: 20,
@@ -572,29 +597,24 @@ function Panel() {
                 {cardText}
               </div>
 
-              {/* Kart içi buton (görselde sadece yazı olacak) */}
-              <a
-                href={profileLink}
-                style={{
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  padding: "8px 16px",
-                  borderRadius: 999,
-                  marginTop: 12,
-                  background: "rgba(15,23,42,0.9)",
-                  color: "white",
-                  textDecoration: "none",
-                  border: "1px solid rgba(248,250,252,0.7)",
-                }}
-              >
-                Bana Whisp gönder!
-              </a>
-
               <div
                 style={{
                   marginTop: 10,
+                  fontSize: 15,
+                  fontWeight: 600,
+                }}
+              >
+                Send me anonymous Whisps 👇
+              </div>
+
+              <div
+                style={{
+                  marginTop: 8,
                   fontSize: 12,
-                  opacity: 0.9,
+                  background: "rgba(15,23,42,0.85)",
+                  padding: "6px 12px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(248,250,252,0.8)",
                   wordBreak: "break-all",
                 }}
               >
@@ -617,7 +637,7 @@ function Panel() {
                 cursor: "pointer",
               }}
             >
-              Paylaş (Foto + Linkli Metin)
+              Share (image + text)
             </button>
 
             <button
@@ -633,7 +653,7 @@ function Panel() {
                 cursor: "pointer",
               }}
             >
-              Kapat
+              Close
             </button>
           </div>
         </div>

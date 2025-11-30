@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-
-// LOGO
 import Logo from "../assets/whispme-logo.png";
 
 function Home() {
@@ -11,25 +9,38 @@ function Home() {
   const [generatedLink, setGeneratedLink] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
 
   const navigate = useNavigate();
   const DOMAIN = "https://whispme.online";
 
+  // 🔥 Load username + premium status
   useEffect(() => {
     const saved = localStorage.getItem("whispme_handle");
+    const userId = localStorage.getItem("loveMeterUserId");
+
     if (saved) {
       setHandle(saved);
       setGeneratedLink(`${DOMAIN}/m/${saved}`);
+    }
+
+    // Fetch premium status from Firestore
+    if (userId) {
+      getDoc(doc(db, "users", userId)).then((snap) => {
+        if (snap.exists() && snap.data().premium === true) {
+          setIsPremium(true);
+        }
+      });
     }
   }, []);
 
   const createLink = async () => {
     setError("");
-
     const value = handle.trim().toLowerCase();
-    if (!value) return setError("Lütfen bir kullanıcı adı gir.");
+
+    if (!value) return setError("Please enter a username.");
     if (!/^[a-z0-9_.]{3,20}$/.test(value))
-      return setError("3–20 karakter, harf/rakam/nokta/alt çizgi kullanılabilir.");
+      return setError("Username must be 3–20 characters. Letters, numbers, dot and underscore allowed.");
 
     try {
       setLoading(true);
@@ -47,7 +58,7 @@ function Home() {
       localStorage.setItem("whispme_handle", value);
       setGeneratedLink(`${DOMAIN}/m/${value}`);
     } catch (e) {
-      setError("Bir hata oluştu.");
+      setError("An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -56,14 +67,14 @@ function Home() {
   const shareLink = async () => {
     if (!generatedLink) return;
 
-    const text = `Bana anonim Whisp göndermek için tıkla: ${generatedLink}`;
+    const text = `Send me an anonymous Whisp: ${generatedLink}`;
 
     try {
       if (navigator.share) {
         await navigator.share({ title: "WhispMe", text, url: generatedLink });
       } else {
         await navigator.clipboard.writeText(text);
-        alert("Link panoya kopyalandı:\n" + text);
+        alert("Copied:\n" + text);
       }
     } catch {}
   };
@@ -74,80 +85,71 @@ function Home() {
         minHeight: "100vh",
         background:
           "linear-gradient(180deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
-        padding: "30px 18px",
+        padding: "28px 16px",
         color: "white",
         display: "flex",
         flexDirection: "column",
       }}
     >
-
-      {/* 🔥 ÜST LOGO */}
-      <div
-        style={{
-          width: "100%",
-          textAlign: "center",
-          marginBottom: 20,
-          marginTop: 5,
-        }}
-      >
+      {/* LOGO */}
+      <div style={{ width: "100%", textAlign: "center", marginBottom: 12 }}>
         <img
           src={Logo}
           alt="WhispMe"
           style={{
             height: 48,
             filter: "drop-shadow(0 0 10px #00eaff)",
-            userSelect: "none",
           }}
         />
+
+        {/* PREMIUM BADGE (only if premium) */}
+        {isPremium && (
+          <div
+            style={{
+              marginTop: 10,
+              display: "inline-block",
+              padding: "6px 14px",
+              background: "linear-gradient(135deg,#ffd776,#ffb347)",
+              color: "#000",
+              borderRadius: 10,
+              fontWeight: 700,
+              fontSize: 13,
+              boxShadow: "0 0 12px rgba(255,215,118,0.55)",
+            }}
+          >
+            ⭐ Premium User
+          </div>
+        )}
       </div>
 
-      {/* ⭐ PREMIUM DÜYMƏSİ */}
-      <button
-        onClick={() => navigate("/premium")}
-        style={{
-          margin: "0 auto 35px auto",
-          padding: "10px 18px",
-          borderRadius: 14,
-          border: "none",
-          background: "linear-gradient(135deg, #ffd776, #ffb347)",
-          color: "#000",
-          fontSize: 15,
-          fontWeight: 700,
-          cursor: "pointer",
-          boxShadow: "0 0 12px rgba(255,215,118,0.55)",
-        }}
-      >
-        ⭐ WhispMe Premium
-      </button>
-
-      {/* AÇIKLAMA */}
+      {/* TEXT */}
       <div
         style={{
           textAlign: "center",
-          fontSize: 16,
-          opacity: 0.85,
-          lineHeight: 1.4,
+          fontSize: 17,
+          opacity: 0.9,
           marginBottom: 30,
+          lineHeight: 1.4,
         }}
       >
-        Arkadaşlarından <strong>anonim</strong> Whisp al.<br />
-        TikTok ve Instagram için optimize edildi.
+        Receive fully <strong>anonymous</strong> Whisps.<br />
+        Designed for TikTok & Instagram.
       </div>
 
       {/* INPUT */}
       <div>
-        <div style={{ fontSize: 14, marginBottom: 8 }}>Kullanıcı adı</div>
+        <div style={{ fontSize: 14, marginBottom: 6 }}>Username</div>
 
         <input
           value={handle}
           onChange={(e) => setHandle(e.target.value)}
-          placeholder="ör: michael"
+          placeholder="example: michael"
           style={{
             width: "100%",
             padding: "14px 16px",
             fontSize: 16,
             borderRadius: 14,
-            border: "1px solid rgba(255,255,255,0.20)",
+            border: "1px solid rgba(255,255,255,0.18)",
             background: "rgba(0,0,0,0.30)",
             color: "white",
             outline: "none",
@@ -161,7 +163,7 @@ function Home() {
           style={{
             marginTop: 10,
             padding: 12,
-            background: "rgba(255,0,0,0.18)",
+            background: "rgba(255,0,0,0.2)",
             borderRadius: 12,
             fontSize: 14,
           }}
@@ -170,17 +172,17 @@ function Home() {
         </div>
       )}
 
-      {/* LİNK OLUŞTUR BUTONU */}
+      {/* BUTTON */}
       <button
         onClick={createLink}
         disabled={loading}
         style={{
-          marginTop: 22,
+          marginTop: 20,
           padding: "14px",
           width: "100%",
           borderRadius: 14,
           border: "none",
-          background: "linear-gradient(135deg, #6e5af9, #d66efd)",
+          background: "linear-gradient(135deg,#6e5af9,#d66efd)",
           color: "white",
           fontSize: 17,
           fontWeight: 600,
@@ -188,10 +190,10 @@ function Home() {
           boxShadow: "0 0 12px rgba(214,110,253,0.55)",
         }}
       >
-        {loading ? "Oluşturuluyor..." : "Whisp linki oluştur"}
+        {loading ? "Creating..." : "Create my Whisp link"}
       </button>
 
-      {/* OLUŞAN LİNK */}
+      {/* LINK BOX */}
       {generatedLink && (
         <div
           style={{
@@ -203,7 +205,7 @@ function Home() {
             boxShadow: "0 0 12px rgba(0,255,255,0.15)",
           }}
         >
-          <div style={{ fontSize: 14, marginBottom: 10 }}>WhispMe linkin:</div>
+          <div style={{ fontSize: 14, marginBottom: 10 }}>Your WhispMe link:</div>
 
           <div
             style={{
@@ -228,7 +230,7 @@ function Home() {
               marginBottom: 10,
             }}
           >
-            Linki Kopyala
+            Copy Link
           </button>
 
           <button
@@ -243,7 +245,7 @@ function Home() {
               marginBottom: 10,
             }}
           >
-            Paylaş (DM / Story Metni)
+            Share (DM / Story Text)
           </button>
 
           <button
@@ -257,10 +259,25 @@ function Home() {
               color: "white",
             }}
           >
-            Whisp Kutuma Git
+            Go to my Whisp Inbox
           </button>
         </div>
       )}
+
+      {/* FOOTER */}
+      <div
+        style={{
+          marginTop: "auto",
+          padding: "35px 0 10px 0",
+          textAlign: "center",
+          opacity: 0.5,
+          fontSize: 13,
+        }}
+      >
+        <a href="/terms" style={{ color: "#fff", marginRight: 16 }}>Terms</a>
+        <a href="/privacy" style={{ color: "#fff", marginRight: 16 }}>Privacy</a>
+        <a href="/refund" style={{ color: "#fff" }}>Refund</a>
+      </div>
     </div>
   );
 }
