@@ -1,12 +1,18 @@
 // src/pages/PremiumCheckoutPage.jsx
 
 import { useEffect, useState, useMemo } from 'react';
-import { db } from "../firebase"; // Adjust path if necessary: "../firebase" or "../../firebase"
+import { db } from "../firebase"; // Düzgün import yolu
 import { doc, setDoc } from "firebase/firestore";
 
-// 🛑 PADDLE_PRODUCT_IDS və CLIENT_TOKEN Tamamilə Qaldırıldı.
+// ⭐ PADDLE SECRETS (Token və ID'ler)
+const PADDLE_PRODUCT_IDS = {
+  monthly: "pri_01kb8yk1xc8mdqvvrvsem5vnf2",
+  yearly:  "pri_01kb8ypz7b9p812z5g7p4rdzb1"
+};
 
-// ------------------- STYLES AND DESIGN CONSTANTS -------------------
+const CLIENT_TOKEN = "live_3db01d894db32c6104fd77e1480"; 
+
+// ------------------- ELITE STYLES AND DESIGN -------------------
 const PRIMARY_COLOR = '#F59E0B'; // Gold/Amber
 const ACCENT_COLOR = '#4ade80'; // Subtle Green
 
@@ -19,22 +25,44 @@ const containerStyle = {
     fontFamily: 'Roboto, "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif'
 };
 
-// ... (Other style constants remain the same for Elite look)
+const titleStyle = {
+    fontSize: '2.5rem',
+    fontWeight: '700',
+    letterSpacing: '-1px',
+    marginBottom: '10px',
+    color: PRIMARY_COLOR 
+};
 
-const bestValueTagStyle = { /* ... */ };
-const checkoutButtonStyle = (isLoading) => ({ /* ... */ });
-const titleStyle = { /* ... */ };
-const subtitleStyle = { /* ... */ };
-const plansContainerStyle = { /* ... */ };
+const plansContainerStyle = {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '2rem',
+    flexWrap: 'wrap',
+    maxWidth: '900px',
+    margin: '0 auto'
+};
+
+const checkoutButtonStyle = (isLoading) => ({
+    marginTop: '60px',
+    padding: "18px 25px",
+    background: isLoading ? '#4b5563' : `linear-gradient(90deg, ${PRIMARY_COLOR}, #D97706)`,
+    border: "none",
+    borderRadius: 12,
+    fontSize: 22,
+    fontWeight: 'bold',
+    cursor: isLoading ? 'not-allowed' : 'pointer',
+    color: "black",
+    width: "100%",
+    maxWidth: 400,
+    boxShadow: isLoading ? 'none' : `0 10px 20px rgba(245, 158, 11, 0.4)`
+});
 
 // ------------------- COMPONENT CODE -------------------
 
 export default function PremiumCheckoutPage() {
     const [activeTab, setActiveTab] = useState("yearly");
-    // Loading state simulyasiya üçün saxlanılır
-    const [loading, setLoading] = useState(false); 
-    
-    // 🛑 Paddle SDK ilə əlaqəli olan "paddleLoaded" state-i silindi.
+    const [loading, setLoading] = useState(true); 
+    const [paddleLoaded, setPaddleLoaded] = useState(false); 
 
     const plans = useMemo(() => ({
         monthly: { 
@@ -55,62 +83,105 @@ export default function PremiumCheckoutPage() {
         return localStorage.getItem("loveMeterUserId") || `guest_${Date.now()}`;
     }, []);
 
-    // 🛑 PADDLE INIT useEffect-i tamamilə silindi.
-
-    // ⭐ CHECKOUT SIMULATION
-    const handleCheckout = () => {
+    // ⭐ PADDLE INIT VƏ LOADING MANAGEMENT (TƏHLÜKƏSİZ VƏ DÜZGÜN VERSİYA)
+    useEffect(() => {
+        let timer;
         
-        // 1. Simulyasiya loadingini başlat
+        const initializePaddle = () => {
+             if (window.Paddle) {
+                window.Paddle.Initialize({
+                    // ✅ DÜZƏLİŞ: SADECE TOKEN TƏQDİM EDİLİR.
+                    token: CLIENT_TOKEN, 
+                });
+                setPaddleLoaded(true);
+                setLoading(false); 
+                console.log("Paddle Initialized.");
+            } else {
+                 console.log("Waiting for Paddle SDK...");
+                 timer = setTimeout(initializePaddle, 1000); 
+            }
+        };
+
+        if (typeof window !== "undefined") {
+            // İlk çağırış
+            initializePaddle();
+        } else {
+            // Server Side Render üçün
+            setLoading(false); 
+        }
+
+        return () => {
+            if (timer) clearTimeout(timer); // Təmizləmə
+        };
+    }, []);
+
+    // ⭐ CHECKOUT OPEN — V2 (popup)
+    const handleCheckout = () => {
+        if (!paddleLoaded) {
+            alert("Payment system is not ready yet. Please wait a moment.");
+            return;
+        }
+
+        const priceId = PADDLE_PRODUCT_IDS[activeTab];
         setLoading(true);
 
-        // 2. Simulyasiya: 1.5 saniyə sonra ödəniş uğurlu olur (Promise istifadə etməklə daha təmiz)
-        setTimeout(async () => {
-            console.log("SIMULATION: Checkout successful.");
+        window.Paddle.Checkout.open({
+            items: [{ priceId: priceId, quantity: 1 }],
+            customer: { id: userId },
+            successCallback: async (data) => {
+                console.log("SUCCESS:", data);
 
-            try {
-                // Firebase update (Eyni qalır)
-                await setDoc(
-                    doc(db, "users", userId),
-                    {
-                        premium: true,
-                        premiumType: activeTab,
-                        premiumSince: Date.now()
-                    },
-                    { merge: true }
-                );
-                alert("✅ Premium access activated successfully (SIMULATED)!");
-            } catch(error) {
-                console.error("Firebase update failed:", error);
-                alert("⚠️ Error updating profile. Please contact support.");
+                try {
+                    // Firebase update
+                    await setDoc(
+                        doc(db, "users", userId),
+                        {
+                            premium: true,
+                            premiumType: activeTab,
+                            premiumSince: Date.now()
+                        },
+                        { merge: true }
+                    );
+                    alert("✅ Premium access activated successfully!");
+                } catch(error) {
+                    console.error("Firebase update failed after Paddle success:", error);
+                    alert("⚠️ Error updating profile. Please contact support.");
+                }
+
+                window.location.href = "/panel";
+            },
+            closeCallback: () => {
+                setLoading(false);
             }
-
-            // 3. Yönləndirmə
-            window.location.href = "/panel";
-            
-            // 4. Loadingi bitir (Yönləndirmə baş verdiyi üçün bu, çox əhəmiyyətli deyil, amma məntiq üçün doğru saxlanılır)
-            setLoading(false);
-
-        }, 1500); // 1.5 saniyelik yüklənmə simulyasiyası
+        });
     };
 
     // ------------------- RENDER -------------------
     
-    // NOTE: Paddle yüklənməsini gözləməyə ehtiyac yoxdur. Səhifə dərhal görünür.
+    // Yüklənmə zamanı sadə ekran
+    if (loading && !paddleLoaded) {
+        return (
+            <div style={{...containerStyle, paddingTop: '40vh', fontSize: '1.5rem'}}>
+                Initializing payment system...
+            </div>
+        );
+    }
     
+    // Əsas Dizayn
     return (
         <div style={containerStyle}>
             {/* Başlıqlar */}
-            <h1 style={{...titleStyle, fontSize: '2.5rem'}}>The WhispMe Premium Club</h1>
+            <h1 style={titleStyle}>The WhispMe Premium Club</h1>
             <h3 style={{...titleStyle, fontSize: '1.2rem', color: '#a0aec0', fontWeight: '400', marginBottom: '50px'}}>
                 Unlock limitless, ad-free experience and exclusive features.
             </h3>
 
-            {/* PLAN SELECTION CARDS (Eyni qalır) */}
+            {/* PLAN SELECTION CARDS */}
             <div style={{...plansContainerStyle, padding: '0'}}>
                 {Object.keys(plans).map((key) => {
                     const plan = plans[key];
                     const isActive = activeTab === key;
-                    const cardStyle = (isActive) => ({ 
+                    const cardStyle = (isActive) => ({ // Card style logic
                         background: isActive ? '#1e293b' : '#111827',
                         border: isActive ? `2px solid ${PRIMARY_COLOR}` : '2px solid #374151',
                         borderRadius: '16px',
@@ -129,7 +200,7 @@ export default function PremiumCheckoutPage() {
                             onClick={() => {if (!loading) setActiveTab(key)}}
                             style={cardStyle(isActive)}
                         >
-                            {plan.isBestValue && <span style={{...bestValueTagStyle, background: PRIMARY_COLOR, color: '#000', fontSize: '0.9rem', padding: '6px 12px', borderRadius: '10px', marginBottom: '20px', display: 'inline-block'}}>BEST VALUE</span>}
+                            {plan.isBestValue && <span style={{background: PRIMARY_COLOR, color: '#000', fontSize: '0.9rem', fontWeight: 'bold', padding: '6px 12px', borderRadius: '10px', marginBottom: '20px', display: 'inline-block'}}>BEST VALUE</span>}
                             <h2 style={{ margin: '0 0 5px 0', fontSize: '2.0rem', color: isActive ? PRIMARY_COLOR : '#fff' }}>
                                 {plan.text}
                             </h2>
@@ -158,11 +229,11 @@ export default function PremiumCheckoutPage() {
                 disabled={loading}
                 style={checkoutButtonStyle(loading)}
             >
-                {loading ? "Processing Payment..." : `Get Started Now — $${plans[activeTab].price}`}
+                {loading ? "Processing..." : `Get Started Now — $${plans[activeTab].price}`}
             </button>
 
             <p style={{ marginTop: 20, color: "#9ca3af", fontSize: 13 }}>
-                (Payment Simulation: Actual payment gateway removed)
+                All payments are securely processed by Paddle.
             </p>
         </div>
     );
